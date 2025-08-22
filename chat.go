@@ -332,6 +332,7 @@ type ChatCompletionRequest struct {
 	SafetyIdentifier string `json:"safety_identifier,omitempty"`
 	// Embedded struct for non-OpenAI extensions
 	ChatCompletionRequestExtensions
+	metadata
 }
 
 type StreamOptions struct {
@@ -494,4 +495,54 @@ func (c *Client) CreateChatCompletion(
 
 	err = c.sendRequest(req, &response)
 	return
+}
+
+// Overrides returns the value of the struct when it is created with
+// [Override], the second argument helps differentiate an explicit null.
+func (m metadata) Overrides() (any, bool) {
+	if _, ok := m.any.(metadataExtraFields); ok {
+		return nil, false
+	}
+	return m.any, m.any != nil
+}
+
+// ExtraFields returns the extra fields added to the JSON object.
+func (m metadata) ExtraFields() map[string]any {
+	if extras, ok := m.any.(metadataExtraFields); ok {
+		return extras
+	}
+	return nil
+}
+
+// If the struct already contains the field ExtraFields, then this
+// method will have no effect.
+func (m *metadata) SetExtraFields(extraFields map[string]any) {
+	m.any = metadataExtraFields(extraFields)
+}
+
+// extraFields aliases [metadata.ExtraFields] to avoid name collisions.
+func (m metadata) extraFields() map[string]any { return m.ExtraFields() }
+
+func (m metadata) null() bool {
+	if _, ok := m.any.(metadataNull); ok {
+		return true
+	}
+
+	if msg, ok := m.any.(json.RawMessage); ok {
+		return string(msg) == "null"
+	}
+
+	return false
+}
+
+type metadata struct{ any }
+type metadataNull struct{}
+type metadataExtraFields map[string]any
+
+func (m *metadata) setMetadata(override any) {
+	if override == nil {
+		m.any = metadataNull{}
+		return
+	}
+	m.any = override
 }
