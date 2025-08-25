@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"reflect"
+	"strings"
 
 	"github.com/sashabaranov/go-openai/jsonschema"
 )
@@ -260,6 +262,81 @@ type ChatCompletionRequestExtensions struct {
 }
 
 // ChatCompletionRequest represents a request structure for chat completion API.
+// MarshalJSON implements json.Marshaler for ChatCompletionRequest.
+func (r ChatCompletionRequest) MarshalJSON() ([]byte, error) {
+	// Create a map to hold all the fields
+	m := make(map[string]any)
+
+	// Use reflection to get all exported fields
+	rv := reflect.ValueOf(r)
+	rt := rv.Type()
+
+	// Iterate over all fields
+	for i := 0; i < rt.NumField(); i++ {
+		field := rt.Field(i)
+		// Skip unexported fields
+		if field.PkgPath != "" {
+			continue
+		}
+
+		// Get JSON tag name
+		jsonTag := field.Tag.Get("json")
+		if jsonTag == "-" {
+			continue // Skip fields explicitly excluded
+		}
+
+		// Extract field name from tag or use field name
+		fieldName := field.Name
+		if jsonTag != "" {
+			// Handle possible omitempty option
+			parts := strings.Split(jsonTag, ",")
+			fieldName = parts[0]
+		}
+
+		// Get field value
+		fieldValue := rv.Field(i).Interface()
+
+		// Add to map
+		m[fieldName] = fieldValue
+	}
+
+	// Add extensions (embedded struct)
+	extensions := r.ChatCompletionRequestExtensions
+	extensionsRV := reflect.ValueOf(extensions)
+	extensionsRT := extensionsRV.Type()
+
+	for i := 0; i < extensionsRT.NumField(); i++ {
+		field := extensionsRT.Field(i)
+		if field.PkgPath != "" {
+			continue
+		}
+
+		jsonTag := field.Tag.Get("json")
+		if jsonTag == "-" {
+			continue
+		}
+
+		fieldName := field.Name
+		if jsonTag != "" {
+			parts := strings.Split(jsonTag, ",")
+			fieldName = parts[0]
+		}
+
+		fieldValue := extensionsRV.Field(i).Interface()
+		m[fieldName] = fieldValue
+	}
+
+	// Add metadata extra fields
+	extraFields := r.metadata.ExtraFields()
+	if len(extraFields) > 0 {
+		for k, v := range extraFields {
+			m[k] = v
+		}
+	}
+
+	return json.Marshal(m)
+}
+
 type ChatCompletionRequest struct {
 	Model    string                  `json:"model"`
 	Messages []ChatCompletionMessage `json:"messages"`
