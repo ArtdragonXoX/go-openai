@@ -326,8 +326,8 @@ func (r ChatCompletionRequest) MarshalJSON() ([]byte, error) {
 		m[fieldName] = fieldValue
 	}
 
-	// Add metadata extra fields
-	extraFields := r.metadata.ExtraFields()
+	// Add apiObject extra fields
+	extraFields := r.apiObject.ExtraFields()
 	if len(extraFields) > 0 {
 		for k, v := range extraFields {
 			m[k] = v
@@ -387,7 +387,7 @@ type ChatCompletionRequest struct {
 	// Controls effort on reasoning for reasoning models. It can be set to "low", "medium", or "high".
 	ReasoningEffort string `json:"reasoning_effort,omitempty"`
 	// Metadata to store with the completion.
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Metadata map[string]string `json:"apiObject,omitempty"`
 	// Configuration for a predicted output.
 	Prediction *Prediction `json:"prediction,omitempty"`
 	// ChatTemplateKwargs provides a way to add non-standard parameters to the request body.
@@ -409,7 +409,7 @@ type ChatCompletionRequest struct {
 	ExtraBody map[string]any `json:"extra_body,omitempty"`
 	// Embedded struct for non-OpenAI extensions
 	ChatCompletionRequestExtensions
-	metadata
+	apiObject
 }
 
 type StreamOptions struct {
@@ -576,7 +576,7 @@ func (c *Client) CreateChatCompletion(
 
 // Overrides returns the value of the struct when it is created with
 // [Override], the second argument helps differentiate an explicit null.
-func (m metadata) Overrides() (any, bool) {
+func (m apiObject) Overrides() (any, bool) {
 	if _, ok := m.any.(metadataExtraFields); ok {
 		return nil, false
 	}
@@ -584,7 +584,7 @@ func (m metadata) Overrides() (any, bool) {
 }
 
 // ExtraFields returns the extra fields added to the JSON object.
-func (m metadata) ExtraFields() map[string]any {
+func (m apiObject) ExtraFields() map[string]any {
 	if extras, ok := m.any.(metadataExtraFields); ok {
 		return extras
 	}
@@ -593,14 +593,14 @@ func (m metadata) ExtraFields() map[string]any {
 
 // If the struct already contains the field ExtraFields, then this
 // method will have no effect.
-func (m *metadata) SetExtraFields(extraFields map[string]any) {
+func (m *apiObject) SetExtraFields(extraFields map[string]any) {
 	m.any = metadataExtraFields(extraFields)
 }
 
-// extraFields aliases [metadata.ExtraFields] to avoid name collisions.
-func (m metadata) extraFields() map[string]any { return m.ExtraFields() }
+// extraFields aliases [apiObject.ExtraFields] to avoid name collisions.
+func (m apiObject) extraFields() map[string]any { return m.ExtraFields() }
 
-func (m metadata) null() bool {
+func (m apiObject) null() bool {
 	if _, ok := m.any.(metadataNull); ok {
 		return true
 	}
@@ -612,11 +612,11 @@ func (m metadata) null() bool {
 	return false
 }
 
-type metadata struct{ any }
+type apiObject struct{ any }
 type metadataNull struct{}
 type metadataExtraFields map[string]any
 
-func (m *metadata) setMetadata(override any) {
+func (m *apiObject) setMetadata(override any) {
 	if override == nil {
 		m.any = metadataNull{}
 		return
