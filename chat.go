@@ -324,7 +324,8 @@ type ChatCompletionRequest struct {
 	// The IDs should be a string that uniquely identifies each user.
 	// We recommend hashing their username or email address, in order to avoid sending us any identifying information.
 	// https://platform.openai.com/docs/api-reference/chat/create#chat_create-safety_identifier
-	SafetyIdentifier string `json:"safety_identifier,omitempty"`
+	SafetyIdentifier string         `json:"safety_identifier,omitempty"`
+	GenerationConfig map[string]any `json:"generationConfig,omitempty"`
 	// ExtraBody provides configuration options for the generation process in Gemini API.
 	// Additional configuration parameters to control model behavior. Will be passed directly to the Gemini API.
 	// Such as thinking mode for Gemini. "extra_body": {"google": {"thinking_config": {"include_thoughts": true}}}
