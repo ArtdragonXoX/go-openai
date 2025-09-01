@@ -17,7 +17,8 @@ type ChatCompletionStreamChoiceDelta struct {
 	// which is not in the official documentation.
 	// the doc from deepseek:
 	// - https://api-docs.deepseek.com/api/create-chat-completion#responses
-	ReasoningContent string `json:"reasoning_content,omitempty"`
+	ReasoningContent  string          `json:"reasoning_content,omitempty"`
+	MultimodalContent ChatMessagePart `json:"multimodal_content,omitempty"`
 }
 
 type ChatCompletionStreamChoiceLogprobs struct {
